@@ -1,0 +1,35 @@
+#!/bin/bash
+
+
+## Rsyncs newmtc/mtc/shl and newmtc/mtc/shl3 to current server
+rsync -av rsync://viz/mtc/shl/ /localmtc/shl
+rsync -av rsync://viz/mtc/shl3/ /localmtc/shl3
+
+
+
+## /mtc is an NFS export from viz which should not be mounted on wary/wise nagios servers
+## user need .ssh folder from their NFS home directory in order to login to wary/wise
+## we rsync a copy of their .ssh from their NFS home folder to the local wary/wise /home
+
+
+for i in vidit rcole lkim hnguyen psalonen cfrancis;
+do
+        mkdir -p /mtc/admin/$i
+        chown $i.users /mtc/admin/$i
+done
+
+##
+for dir in `ls /mtc/admin`
+do
+        if [ "$dir" == "d" ] ; then
+                # Dave has a diff network home folder
+                #echo "to rsync d .ssh folder from another mtc folder"
+                rsync -au rsync://viz/mtc/d/.ssh /home/d/
+                continue;
+        fi
+        #echo "rsync " $dir ".ssh folder"
+        rsync -au rsync://viz/mtc/admin/$dir/.ssh /localmtc/admin/$dir/
+done
+
+
+
