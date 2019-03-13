@@ -1,0 +1,102 @@
+#!/bin/bash
+
+## Author Logan Kim
+## Written Date: 02/08/2019
+## Description: This script will take a username as an input and add the user to the current server if this user does not exist.
+## If the user does not exist in sand, the user will not be created in the current server. The user had to exist in sand.
+## Last edit day: 02/08/2019
+
+
+
+action=$1
+user=$2
+
+exists_in_local=`cat /etc/passwd | grep $user`
+exists_in_sand=`cat /mtc/shl/user_list | grep $user`
+user_shadow=`cat /mtc/shl/user_shadow_list | grep $user`
+
+
+
+## Exit script if incorrect action is entered
+
+if [ "$action" != "add" ] && [ "$action" != "delete" ]; then
+
+        echo "Action not recognized. Use either add or delete."
+
+        exit
+
+fi
+
+
+## If parameter is not given, print instruction and exit
+
+if [ ! "$1" ] || [ ! "$2" ]; then
+
+        echo "One or two parameters missing."
+
+        echo "Execute the script followed by action (add or delete) and username."
+
+        echo "Example: ./add_user add employee1."
+
+        exit
+
+fi
+
+
+## Exit if  user tries to add a user that exists
+
+if [ -n "$exists_in_local" ] && [ "$action" == "add" ]; then
+
+        echo "User $user already exists. Exiting."
+
+        exit
+
+fi
+
+
+## Exit if user tries to create a user that does not exist in sand
+
+## Exit if user tries to create a user that does not exist in sand
+
+if [ -z "$exists_in_sand" ]; then
+
+        echo "Create user $user in sand first."
+
+        exit
+
+fi
+
+## Add user if user exists in sand, but not here.
+
+if [ -z "$exists_in_local" ] && [ -n "$exists_in_sand" ] && [ "$action" == "add" ]; then
+
+        echo "User $user has been added."
+
+        echo "$exists_in_sand" >> /etc/passwd
+
+        echo "$user_shadow" >> /etc/shadow
+
+        exit
+
+fi
+
+## Delete user if user exists.
+
+if [ -n "$exists_in_local" ]  && [ "$action" == "delete" ]; then
+
+        echo "Deleting user $user."
+
+        userdel $user
+        exit
+
+fi
+
+## Exit if user tries to delete a user that does not exist.
+
+if [ -z "$exists_in_local" ] && [ "$action" == "delete" ]; then
+
+        echo "User $user does not exist. Exiting."
+
+        exit
+
+fi
